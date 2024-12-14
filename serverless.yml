@@ -1,0 +1,36 @@
+service: nestjs-serverless-example
+frameworkVersion: "3"
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  profile:
+    dev: default 
+    prod: default
+    test: default
+  
+provider:
+  name: aws
+  stage: dev
+  region: us-east-1
+  profile: ${self:custom.profile.${self:custom.stage}}
+  runtime: nodejs20.x
+  iam:
+    role:
+      statements:
+        - ${file(./table-permissions.yml)}
+
+functions:
+  todos-create:
+    handler: dist/main-sls.handler
+    events:
+      - http:
+          path: todos
+          method: post
+   
+  todos-get:
+    handler: dist/main-sls.handler
+    events:
+      - http:
+          path: todos
+          method: get
+plugins:
+  - serverless-offline
