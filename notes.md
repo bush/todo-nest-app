@@ -7,6 +7,7 @@ Get to basic todo app with at least a reusable user microservice and todos
 ## Next major topic to flesh out
 
 * Fix various FIXME's throughout the app
+* Serverless dynamodb setup
 * Complete tests
 * General clean up
 * Auth Basic

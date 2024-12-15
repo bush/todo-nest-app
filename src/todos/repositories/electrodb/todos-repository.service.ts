@@ -15,9 +15,6 @@ import { CreateTodoDto } from '../../dto/create-todo.dto';
 import { UpdateTodoDto } from '../../dto/update-todo.dto';
 import { ITodoRepository } from '../../interfaces/todos-repository';
 
-import * as util from 'util';
-import { table } from 'console';
-
 
 const client = new DynamoDBClient({});
 
@@ -29,20 +26,19 @@ type TodoEntity = Entity<string, string, string, TodoSchema>;
 @Injectable()
 export class ElectroDbTodoRepository implements ITodoRepository {
   
-  private todo: TodoEntity;
+  private todos: TodoEntity;
 
   constructor(private configService: ConfigService) {
-    // FIXME: This logs doesn't show up for the unit test
+    
+    // Example log
     Logger.log(
       `${this.configService.get<string>('TODO_TABLE_TABLENAME')}`,
       'ElectroDbTodoRepository',
     );
-    Logger.log('here!!!!!!', 'ElectroDbTodoRepository')
 
     const table = this.configService.get<string>('TODO_TABLE_TABLENAME');
     const schema = this.configService.get<TodoSchema>('schema');
-    console.log(util.inspect(schema,{depth:10}))
-    this.todo = new Entity(schema, { table, client });
+    this.todos = new Entity(schema, { table, client });
   }
 
   async create(createTodoDto: CreateTodoDto): Promise<TodoID> {
@@ -50,7 +46,7 @@ export class ElectroDbTodoRepository implements ITodoRepository {
     const id = uuidv4();
     const complete = isCompleted || false;
 
-    const result = await this.todo
+    const result = await this.todos
       .put({
         id,
         title: title || 'untitled',
@@ -63,7 +59,7 @@ export class ElectroDbTodoRepository implements ITodoRepository {
   }
 
   async findAll(next?: string): Promise<Todos> {
-    const result = await this.todo.query.primary({}).go({
+    const result = await this.todos.query.primary({}).go({
       cursor: next,
       attributes: ['id', 'title', 'isCompleted'],
       count: 10,
@@ -73,7 +69,7 @@ export class ElectroDbTodoRepository implements ITodoRepository {
   }
 
   async findOne(id: string): Promise<Todo> {
-    const result = await this.todo.get({ id }).go();
+    const result = await this.todos.get({ id }).go();
     if (!result.data) {
       return null;
     }
@@ -86,13 +82,13 @@ export class ElectroDbTodoRepository implements ITodoRepository {
 
   async update(id: string, updateTodoDto: UpdateTodoDto): Promise<void> {
     const { title, description, isCompleted } = updateTodoDto;
-    const result = await this.todo
+    const result = await this.todos
       .patch({ id })
       .set({ title, description, isCompleted })
       .go();
   }
 
   async remove(id: string): Promise<void> {
-    await this.todo.delete({ id }).go();
+    await this.todos.delete({ id }).go();
   }
 }

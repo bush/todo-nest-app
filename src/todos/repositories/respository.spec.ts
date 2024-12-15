@@ -1,28 +1,36 @@
 // src/todos/repositories/repository.spec.ts
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConsoleLogger } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ElectroDbTodoRepository } from './electrodb/todos-repository.service';
 import { ITodoRepository } from '../interfaces/todos-repository';
 import { TodoPreview } from '../interfaces/todo';
+import todosConfig from './electrodb/todos-config';
+
+const useLogger = false;
 
 describe('RepositoryService', () => {
   let repository: ITodoRepository;
 
   beforeEach(async () => {
-
     const module: TestingModule = await Test.createTestingModule({
       imports: [
+        // What is the root directory of the configuration file?
+
         ConfigModule.forRoot({
-          envFilePath: 'config/.env.dynamodb.repositories'
+          envFilePath: 'config/dynamodb/.env.dynamodb.repositories',
+          load: [todosConfig],
         }),
       ],
       providers: [
         {
           provide: 'TodoRepositoryService',
-          useClass: ElectroDbTodoRepository
-        }
+          useClass: ElectroDbTodoRepository,
+        },
       ],
-    }).compile();
+    })
+      .setLogger(useLogger ? new ConsoleLogger() : null)
+      .compile();
 
     repository = module.get<ITodoRepository>('TodoRepositoryService');
   });
@@ -56,16 +64,13 @@ describe('RepositoryService', () => {
     let todos: TodoPreview[] = [];
     let cursor = null;
     do {
-      const res = await repository.findAll(cursor)
+      const res = await repository.findAll(cursor);
       todos.push(...res.todos);
-      cursor = res.next
-    } while ( cursor !== null)
-    
-    console.log(todos);
-  })
+      cursor = res.next;
+    } while (cursor !== null);
+  });
 
   it('should delete a todo', async () => {
-
     const todo = {
       title: 'Delete Test Todo',
       description: 'Delete Test Description',
