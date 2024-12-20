@@ -1,44 +1,18 @@
-import { Entity, Schema, Attribute } from 'electrodb';
 import { v4 as uuidv4 } from 'uuid';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { Injectable } from '@nestjs/common';
 
-import {
-  Injectable,
-  Logger,
-  Inject,
-  BadRequestException,
-} from '@nestjs/common';
-
-import { ConfigService } from '@nestjs/config';
-import { Todo, Todos, TodoID, TodoPreview } from '../../interfaces/todo';
+import { TodoConfig, TodoEntity} from './todos-config';
 import { CreateTodoDto } from '../../dto/create-todo.dto';
 import { UpdateTodoDto } from '../../dto/update-todo.dto';
+import { Todo, Todos, TodoID } from '../../interfaces/todo';
 import { ITodoRepository } from '../../interfaces/todos-repository';
-
-
-const client = new DynamoDBClient({});
-
-
-type TodoSchema = Schema<string, string, string>;
-type TodoEntity = Entity<string, string, string, TodoSchema>;
-
 
 @Injectable()
 export class ElectroDbTodoRepository implements ITodoRepository {
-  
-  private todos: TodoEntity;
+  private todos: TodoEntity
 
-  constructor(private configService: ConfigService) {
-    
-    // Example log
-    Logger.log(
-      `${this.configService.get<string>('TODO_TABLE_TABLENAME')}`,
-      'ElectroDbTodoRepository',
-    );
-
-    const table = this.configService.get<string>('TODO_TABLE_TABLENAME');
-    const schema = this.configService.get<TodoSchema>('schema');
-    this.todos = new Entity(schema, { table, client });
+  constructor(config: TodoConfig) {
+    this.todos = config.entity;
   }
 
   async create(createTodoDto: CreateTodoDto): Promise<TodoID> {
@@ -90,5 +64,5 @@ export class ElectroDbTodoRepository implements ITodoRepository {
 
   async remove(id: string): Promise<void> {
     await this.todos.delete({ id }).go();
-  }
+  }  
 }

@@ -1,31 +1,42 @@
-// src/todos/repositories/repository.spec.ts
 import { ConsoleLogger } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ElectroDbTodoRepository } from './electrodb/todos-repository.service';
-import { ITodoRepository } from '../interfaces/todos-repository';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+
 import { TodoPreview } from '../interfaces/todo';
-import todosConfig from './electrodb/todos-config';
+import { TodoConfig } from './electrodb/todos-config';
+import { ITodoRepository } from '../interfaces/todos-repository';
+import { ElectroDbTodoRepository } from './electrodb/todos-repository.service';
+
+import { Logger } from '@nestjs/common';
 
 const useLogger = false;
 
 describe('RepositoryService', () => {
+
+  Logger.log(`NODE_ENV: ${process.env.NODE_ENV}`, 'RepositoryService');
+
   let repository: ITodoRepository;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
-        // What is the root directory of the configuration file?
-
         ConfigModule.forRoot({
-          envFilePath: 'config/dynamodb/.env.dynamodb.repositories',
-          load: [todosConfig],
+          envFilePath: `config/dynamodb/.${process.env.NODE_ENV}.env`,
         }),
       ],
       providers: [
         {
           provide: 'TodoRepositoryService',
           useClass: ElectroDbTodoRepository,
+        },
+        TodoConfig,
+        {
+          provide: DynamoDBClient,
+          useFactory: (config: ConfigService) => {
+            return new DynamoDBClient({ endpoint: config.get<string>('ENDPOINT') })
+          },
+          inject: [ConfigService],
         },
       ],
     })

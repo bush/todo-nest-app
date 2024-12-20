@@ -3,12 +3,14 @@ frameworkVersion: "3"
 custom:
   stage: ${opt:stage, self:provider.stage}
   profile:
-    dev: default 
+    dev: default
     prod: default
     test: default
   
 provider:
   name: aws
+  environment:
+    NODE_ENV: development
   stage: dev
   region: us-east-1
   profile: ${self:custom.profile.${self:custom.stage}}
