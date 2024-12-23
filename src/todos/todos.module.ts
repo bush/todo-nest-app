@@ -1,5 +1,4 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
-
 import { TodosService } from './todos.service';
 import { TodosController } from './todos.controller';
 import { TodosRepositoryElectorDBModule } from './repositories/electrodb/todos-repository.module';

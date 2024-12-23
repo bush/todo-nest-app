@@ -11,11 +11,14 @@ import {
   HttpStatus,
   BadRequestException
 } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TodosService } from './todos.service';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
 import { Logger } from '@nestjs/common';
 
+@UseGuards(JwtAuthGuard)
 @Controller('todos')
 export class TodosController {
   constructor(protected readonly todosService: TodosService) {}
