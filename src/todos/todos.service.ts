@@ -1,13 +1,12 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { ITodoRepository } from './interfaces/todos-repository';
+import { Injectable } from '@nestjs/common';
+import { TodosRepository } from './interfaces/todos-repository';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
 
 @Injectable()
 export class TodosService {
   constructor(
-    @Inject('TodoRepositoryService')
-    private readonly todoRepository: ITodoRepository,
+    private readonly todoRepository: TodosRepository
   ) {}
 
   create(createTodoDto: CreateTodoDto) {

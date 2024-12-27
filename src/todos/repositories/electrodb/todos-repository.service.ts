@@ -1,15 +1,22 @@
-import { v4 as uuidv4 } from 'uuid';
-import { Injectable } from '@nestjs/common';
+import { v4 as uuidv4 } from "uuid";
+import {
+  BadRequestException,
+  Injectable,
+  Query,
+  UseFilters,
+} from "@nestjs/common";
 
-import { TodoConfig, TodoEntity} from './todos-config';
-import { CreateTodoDto } from '../../dto/create-todo.dto';
-import { UpdateTodoDto } from '../../dto/update-todo.dto';
-import { Todo, Todos, TodoID } from '../../interfaces/todo';
-import { ITodoRepository } from '../../interfaces/todos-repository';
+import { TodoConfig, TodoEntity } from "./todos-config";
+import { CreateTodoDto } from "../../dto/create-todo.dto";
+import { UpdateTodoDto } from "../../dto/update-todo.dto";
+import { Todo, Todos, TodoID, TodoPreview } from "../../interfaces/todo";
+import { TodosRepository } from "../../interfaces/todos-repository";
+
+import { InternalServerErrorException } from "@nestjs/common";
 
 @Injectable()
-export class ElectroDbTodoRepository implements ITodoRepository {
-  private todos: TodoEntity
+export class ElectroDbTodoRepository implements TodosRepository {
+  private todos: TodoEntity;
 
   constructor(config: TodoConfig) {
     this.todos = config.entity;
@@ -23,8 +30,8 @@ export class ElectroDbTodoRepository implements ITodoRepository {
     const result = await this.todos
       .put({
         id,
-        title: title || 'untitled',
-        description: description || '',
+        title: title || "untitled",
+        description: description || "",
         isCompleted: complete,
       })
       .go();
@@ -33,13 +40,27 @@ export class ElectroDbTodoRepository implements ITodoRepository {
   }
 
   async findAll(next?: string): Promise<Todos> {
-    const result = await this.todos.query.primary({}).go({
-      cursor: next,
-      attributes: ['id', 'title', 'isCompleted'],
-      count: 10,
-    });
+    try {
+      const result = await this.todos.query.primary({}).go({
+        cursor: next,
+        attributes: ["id", "title", "isCompleted"],
+        count: 10,
+      });
 
-    return { next: result.cursor, todos: result.data } as Todos;
+      const todos: Todos = { todos: result.data as TodoPreview[] };
+      if (result.cursor !== null) {
+        todos.next = result.cursor;
+      }
+      return todos;
+
+    } catch (error) {
+
+      if (error.code === 4001) {
+        throw new BadRequestException(error.message);
+      }
+
+      throw new InternalServerErrorException();
+    }
   }
 
   async findOne(id: string): Promise<Todo> {
@@ -64,5 +85,5 @@ export class ElectroDbTodoRepository implements ITodoRepository {
 
   async remove(id: string): Promise<void> {
     await this.todos.delete({ id }).go();
-  }  
+  }
 }

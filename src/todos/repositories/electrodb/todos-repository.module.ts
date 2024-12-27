@@ -1,9 +1,10 @@
-import { Module } from '@nestjs/common';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { Module } from "@nestjs/common";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { ConfigModule, ConfigService } from "@nestjs/config";
 
-import { TodoConfig } from './todos-config';
-import { ElectroDbTodoRepository } from './todos-repository.service';
+import { TodoConfig } from "./todos-config";
+import { ElectroDbTodoRepository } from "./todos-repository.service";
+import { TodosRepository } from "src/todos/interfaces/todos-repository";
 
 @Module({
   imports: [
@@ -12,17 +13,14 @@ import { ElectroDbTodoRepository } from './todos-repository.service';
     }),
   ],
   providers: [
-    {
-      provide: 'TodoRepositoryService',
-      useClass: ElectroDbTodoRepository,
-    },
+    { provide: TodosRepository, useClass: ElectroDbTodoRepository },
     TodoConfig,
     {
       provide: DynamoDBClient,
       useFactory: (config: ConfigService) => {
         const client =
-          process.env.NODE_ENV === 'development'
-            ? new DynamoDBClient({ endpoint: config.get<string>('ENDPOINT') })
+          process.env.NODE_ENV === "development"
+            ? new DynamoDBClient({ endpoint: config.get<string>("ENDPOINT") })
             : new DynamoDBClient({});
         return client;
       },
@@ -31,10 +29,9 @@ import { ElectroDbTodoRepository } from './todos-repository.service';
   ],
   exports: [
     {
-      provide: 'TodoRepositoryService',
+      provide: TodosRepository,
       useClass: ElectroDbTodoRepository,
     },
   ],
 })
-
 export class TodosRepositoryElectorDBModule {}

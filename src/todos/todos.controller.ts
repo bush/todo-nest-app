@@ -18,6 +18,9 @@ import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
 import { Logger } from '@nestjs/common';
 
+import { isJWT } from 'class-validator';
+
+
 @UseGuards(JwtAuthGuard)
 @Controller('todos')
 export class TodosController {
