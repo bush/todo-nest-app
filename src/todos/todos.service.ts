@@ -13,8 +13,8 @@ export class TodosService {
     return this.todoRepository.create(createTodoDto);
   }
 
-  findAll(next?: string) {
-    return this.todoRepository.findAll(next);
+  findAll(next?: string, limit?: number) {
+    return this.todoRepository.findAll(next, limit);
   }
 
   findOne(id: string) {

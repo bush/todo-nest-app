@@ -9,16 +9,17 @@ import {
   Delete,
   ParseUUIDPipe,
   HttpStatus,
-  BadRequestException
+  BadRequestException,
+  ParseIntPipe
 } from '@nestjs/common';
 import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TodosService } from './todos.service';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
-import { Logger } from '@nestjs/common';
+import { QueryDto } from './dto/query-todo.dto';
+import { Logger, ValidationPipe } from '@nestjs/common';
 
-import { isJWT } from 'class-validator';
 
 
 @UseGuards(JwtAuthGuard)
@@ -36,9 +37,12 @@ export class TodosController {
     }
   }
 
+  //findAll(@Query('next') next?: string,  @Query('limit') limit?: number) {
+
   @Get()
-  findAll(@Query('next') next?: string) {
-    return this.todosService.findAll(next);
+  findAll(@Query(new ValidationPipe({ transform: true })) query: QueryDto) {
+    const { next, limit } = query;
+    return this.todosService.findAll(next, limit);
   }
 
   // Not we don't need to define a custom error here, its just an

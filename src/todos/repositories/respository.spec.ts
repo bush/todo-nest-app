@@ -1,55 +1,81 @@
-import { ConsoleLogger } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { Test, TestingModule } from "@nestjs/testing";
+import { ConsoleLogger, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { TodoConfig } from "./electrodb/todos-config";
+import { TodoPreview } from "../interfaces/todo";
+import { TodosRepository } from "../interfaces/todos-repository";
+import { TodosRepositoryElectorDBModule } from "./electrodb/todos-repository.module";
 
-import { TodoPreview } from '../interfaces/todo';
-import { TodoConfig } from './electrodb/todos-config';
-import { ITodoRepository } from '../interfaces/todos-repository';
-import { ElectroDbTodoRepository } from './electrodb/todos-repository.service';
+import util from "util";
 
-import { Logger } from '@nestjs/common';
-
+// Logging on/off
 const useLogger = false;
 
-describe('RepositoryService', () => {
+let repository: TodosRepository;
+let testModule: TestingModule;
 
-  Logger.log(`NODE_ENV: ${process.env.NODE_ENV}`, 'RepositoryService');
+const electrodbTestModule = Test.createTestingModule({
+  imports: [TodosRepositoryElectorDBModule],
+})
+  .setLogger(useLogger ? new ConsoleLogger() : null)
+  .compile();
 
-  let repository: ITodoRepository;
+const fixtures = [
+  {
+    mapper: "electrodb",
+    module: electrodbTestModule,
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [
-        ConfigModule.forRoot({
-          envFilePath: `config/dynamodb/.${process.env.NODE_ENV}.env`,
-        }),
-      ],
-      providers: [
-        {
-          provide: 'TodoRepositoryService',
-          useClass: ElectroDbTodoRepository,
-        },
-        TodoConfig,
-        {
-          provide: DynamoDBClient,
-          useFactory: (config: ConfigService) => {
-            return new DynamoDBClient({ endpoint: config.get<string>('ENDPOINT') })
-          },
-          inject: [ConfigService],
-        },
-      ],
-    })
-      .setLogger(useLogger ? new ConsoleLogger() : null)
-      .compile();
+    all: (testModule: TestingModule) => {
+      const config = testModule.get<ConfigService>(ConfigService);
+      const todoConfig = testModule.get<TodoConfig>(TodoConfig);
+      todoConfig.entity.setTableName(config.get("TODO_TABLE_TABLENAME"));
+    },
 
-    repository = module.get<ITodoRepository>('TodoRepositoryService');
+    each: (testModule: TestingModule) => {
+      const config = testModule.get<ConfigService>(ConfigService);
+      const todoConfig = testModule.get<TodoConfig>(TodoConfig);
+      todoConfig.entity.setTableName(config.get("TODO_TABLE_TABLENAME"));
+    },
+
+    getAll: (testModule: TestingModule) => {
+      const todoConfig = testModule.get<TodoConfig>(TodoConfig);
+      todoConfig.entity.setTableName("todo-table-empty-1");
+    },
+  },
+];
+
+// Currently we only support electrodb for dynamodb but could support others in
+// the future. The idea is to test to the repository interface.
+describe.each(fixtures)("RepositoryService", (fixture) => {
+  beforeAll(async () => {
+    Logger.log(`NODE_ENV: ${process.env.NODE_ENV}`, "RepositoryService");
+    const testModule = await fixture.module;
+
+    if ("all" in fixture) {
+      fixture.all(testModule);
+    }
+
+    repository = testModule.get<TodosRepository>(TodosRepository);
   });
 
-  it('should create a new todo', async () => {
+  beforeEach(async () => {
+    const testModule = await fixture.module;
+    fixture.each(testModule);
+
+    Logger.log(
+      `NODE_ENV: ${process.env.NODE_ENV}, mapper: ${fixture.mapper}`,
+      "RepositoryService"
+    );
+  });
+
+  it("NOOP", async () => {
+    Logger.log("NOOP");
+  });
+
+  it("should create a new todo", async () => {
     let todo = {
-      title: 'Test Todo',
-      description: 'Test Description',
+      title: "Test Todo",
+      description: "Test Description",
       isCompleted: false,
     };
     const created = await repository.create(todo);
@@ -58,10 +84,10 @@ describe('RepositoryService', () => {
     expect(createdTodo).toEqual(found);
   });
 
-  it('should update a todo', async () => {
+  it("should update a todo", async () => {
     const todo = {
-      title: 'Update Test Todo',
-      description: 'Update Test Description',
+      title: "Update Test Todo",
+      description: "Update Test Description",
       isCompleted: false,
     };
     const res = await repository.create(todo);
@@ -71,20 +97,40 @@ describe('RepositoryService', () => {
     expect(foundTodo).toEqual(updatedTodo);
   });
 
-  it('should get all todos', async () => {
+  it("should get all todos", async () => {
+    const testModule = await fixture.module;
+
+    // Test specific setup
+    fixture.getAll(testModule);
+
+    for (const index of Array(20).keys()) {
+      await repository.create({
+        title: `Test Todo ${index}`,
+        description: `Test Description ${index}`,
+        isCompleted: false,
+      });
+    }
+
     let todos: TodoPreview[] = [];
-    let cursor = null;
+    let next = null;
+    let pages = 1;
     do {
-      const res = await repository.findAll(cursor);
+      const res = await repository.findAll(next);
+      Logger.log(`Todos: ${util.inspect(res,{depth:10})}`, "RepositoryService");
       todos.push(...res.todos);
-      cursor = res.next;
-    } while (cursor !== null);
+      Logger.log(`Page ${pages}`, "RepositoryService");
+      pages++;
+      next = res.next;
+    } while (next !== null);
+
+    Logger.log(`Found ${todos.length} todos`, "RepositoryService");
+    expect(todos.length).toBe(20);
   });
 
-  it('should delete a todo', async () => {
+  it("should delete a todo", async () => {
     const todo = {
-      title: 'Delete Test Todo',
-      description: 'Delete Test Description',
+      title: "Delete Test Todo",
+      description: "Delete Test Description",
       isCompleted: false,
     };
     const res = await repository.create(todo);

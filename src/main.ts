@@ -9,6 +9,7 @@ async function bootstrap() {
     logger: ['verbose'],
   });
   app.useGlobalPipes(new ValidationPipe());
+  Logger.log(`NODE_ENV: ${process.env.NODE_ENV}`, "Main");
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();

@@ -4,7 +4,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 
 import { TodoConfig } from "./todos-config";
 import { ElectroDbTodoRepository } from "./todos-repository.service";
-import { TodosRepository } from "src/todos/interfaces/todos-repository";
+import { TodosRepository } from "../../interfaces/todos-repository";
 
 @Module({
   imports: [
@@ -19,8 +19,8 @@ import { TodosRepository } from "src/todos/interfaces/todos-repository";
       provide: DynamoDBClient,
       useFactory: (config: ConfigService) => {
         const client =
-          process.env.NODE_ENV === "development"
-            ? new DynamoDBClient({ endpoint: config.get<string>("ENDPOINT") })
+          process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test"
+            ? new DynamoDBClient({ endpoint: config.get<string>("ENDPOINT"), region: config.get<string>("TODO_TABLE_REGION") })
             : new DynamoDBClient({});
         return client;
       },
