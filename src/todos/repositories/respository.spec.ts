@@ -97,34 +97,53 @@ describe.each(fixtures)("RepositoryService", (fixture) => {
     expect(foundTodo).toEqual(updatedTodo);
   });
 
+
   it("should get all todos", async () => {
     const testModule = await fixture.module;
-
+  
     // Test specific setup
     fixture.getAll(testModule);
-
-    for (const index of Array(20).keys()) {
+  
+    // Create 20 test todos
+    for (let index = 0; index < 20; index++) {
       await repository.create({
         title: `Test Todo ${index}`,
-        description: `Test Description ${index}`,
         isCompleted: false,
       });
     }
-
+  
     let todos: TodoPreview[] = [];
     let next = null;
     let pages = 1;
+  
+    // Paginate through results
     do {
       const res = await repository.findAll(next);
-      Logger.log(`Todos: ${util.inspect(res,{depth:10})}`, "RepositoryService");
+  
+      // Accumulate todos and move to the next page
       todos.push(...res.todos);
-      Logger.log(`Page ${pages}`, "RepositoryService");
+  
+      Logger.log(`Page ${pages}: Fetched ${res.todos.length} todos`, "RepositoryService");
       pages++;
       next = res.next;
     } while (next !== null);
-
-    Logger.log(`Found ${todos.length} todos`, "RepositoryService");
+  
+    // Sort todos by the numerical value of the test number in the title
+    todos.sort((a, b) => {
+      const numA = parseInt(a.title.match(/\d+$/)?.[0] || "0", 10);
+      const numB = parseInt(b.title.match(/\d+$/)?.[0] || "0", 10);
+      return numA - numB;
+    });
+  
+    // Final assertions
+    Logger.log(`Total todos fetched: ${todos.length}`, "RepositoryService");
     expect(todos.length).toBe(20);
+  
+    // Validate overall correctness after sorting
+    for (let i = 0; i < todos.length; i++) {
+      expect(todos[i].title).toBe(`Test Todo ${i}`);
+      expect(todos[i].isCompleted).toBe(false);
+    }
   });
 
   it("should delete a todo", async () => {
