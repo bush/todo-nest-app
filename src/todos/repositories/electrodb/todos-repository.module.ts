@@ -1,10 +1,10 @@
-import { Module } from "@nestjs/common";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { ConfigModule, ConfigService } from "@nestjs/config";
+import { Module } from '@nestjs/common';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
-import { TodoConfig } from "./todos-config";
-import { ElectroDbTodoRepository } from "./todos-repository.service";
-import { TodosRepository } from "../../interfaces/todos-repository";
+import { TodoConfig } from './todos-config';
+import { ElectroDbTodoRepository } from './todos-repository.service';
+import { TodosRepository } from '../../interfaces/todos-repository';
 
 @Module({
   imports: [
@@ -19,8 +19,12 @@ import { TodosRepository } from "../../interfaces/todos-repository";
       provide: DynamoDBClient,
       useFactory: (config: ConfigService) => {
         const client =
-          process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test"
-            ? new DynamoDBClient({ endpoint: config.get<string>("ENDPOINT"), region: config.get<string>("TODO_TABLE_REGION") })
+          process.env.NODE_ENV === 'development' ||
+          process.env.NODE_ENV === 'test'
+            ? new DynamoDBClient({
+                endpoint: config.get<string>('ENDPOINT'),
+                region: config.get<string>('TODO_TABLE_REGION'),
+              })
             : new DynamoDBClient({});
         return client;
       },
