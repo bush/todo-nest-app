@@ -54,7 +54,7 @@ export class ElectroDbTodoRepository implements TodosRepository {
 
     } catch (error) {
 
-      if (error.code === 4001) {
+      if (error instanceof Error && 'code' in error && error.code === 4001) {
         throw new BadRequestException(error.message);
       }
 

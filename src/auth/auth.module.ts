@@ -10,6 +10,20 @@ import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from './constants';
 import { JwtAuthGuard } from './jwt-auth.guard'
 
+//https://auth0.com/blog/developing-a-secure-api-with-nestjs-adding-authorization/
+
+@Module({
+  imports: [
+    UsersModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    JwtModule,
+  ],
+  providers: [AuthService, LocalStrategy, JwtStrategy],
+  exports: [AuthService],
+})
+export class AuthModule {}
+
+/*
 @Module({
   imports: [
     UsersModule,
@@ -23,3 +37,4 @@ import { JwtAuthGuard } from './jwt-auth.guard'
   exports: [AuthService],
 })
 export class AuthModule {}
+*/

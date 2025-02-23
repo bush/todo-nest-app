@@ -1,7 +1,7 @@
 import { IsInt, Min, Max, IsOptional, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class QueryDto {
+export class QueryTodoDto {
   @IsOptional() // Makes `limit` optional
   @Type(() => Number) 
   @IsInt({ message: 'Limit must be an integer' }) // Validates as an integer

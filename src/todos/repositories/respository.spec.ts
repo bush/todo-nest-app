@@ -12,7 +12,6 @@ import util from "util";
 const useLogger = false;
 
 let repository: TodosRepository;
-let testModule: TestingModule;
 
 const electrodbTestModule = Test.createTestingModule({
   imports: [TodosRepositoryElectorDBModule],
@@ -37,30 +36,28 @@ const fixtures = [
       todoConfig.entity.setTableName(config.get("TODO_TABLE_TABLENAME"));
     },
 
-    getAll: (testModule: TestingModule) => {
+    ["should get all todos"]: (testModule: TestingModule) => {
       const todoConfig = testModule.get<TodoConfig>(TodoConfig);
       todoConfig.entity.setTableName("todo-table-empty-1");
     },
   },
 ];
 
+
+let testName = '';
 // Currently we only support electrodb for dynamodb but could support others in
 // the future. The idea is to test to the repository interface.
 describe.each(fixtures)("RepositoryService", (fixture) => {
   beforeAll(async () => {
     Logger.log(`NODE_ENV: ${process.env.NODE_ENV}`, "RepositoryService");
     const testModule = await fixture.module;
-
-    if ("all" in fixture) {
-      fixture.all(testModule);
-    }
-
+    fixture.all(testModule);
     repository = testModule.get<TodosRepository>(TodosRepository);
   });
 
   beforeEach(async () => {
     const testModule = await fixture.module;
-    fixture.each(testModule);
+    fixture.each?.(testModule);
 
     Logger.log(
       `NODE_ENV: ${process.env.NODE_ENV}, mapper: ${fixture.mapper}`,
@@ -98,12 +95,13 @@ describe.each(fixtures)("RepositoryService", (fixture) => {
   });
 
 
-  it("should get all todos", async () => {
+  testName = "should get all todos";
+  it(testName, async () => {
     const testModule = await fixture.module;
   
     // Test specific setup
-    fixture.getAll(testModule);
-  
+    fixture[testName]?.(testModule);
+   
     // Create 20 test todos
     for (let index = 0; index < 20; index++) {
       await repository.create({

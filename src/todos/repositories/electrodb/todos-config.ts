@@ -11,7 +11,7 @@ export class TodoConfig {
   public readonly entity: TodoEntity;
 
   constructor(config: ConfigService, client: DynamoDBClient) {
-    this.entity = new Entity({
+    this.entity = new Entity<string, string, string, Schema<string, string, string>>({
       model: {
         entity: 'Todo',
         version: '1',
